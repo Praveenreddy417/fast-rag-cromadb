@@ -1,1 +1,1 @@
-web: gunicorn employee_ai.wsgi:application
+web: gunicorn -k uvicorn.workers.UvicornWorker app.main:app
