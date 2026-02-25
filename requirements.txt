@@ -62,6 +62,7 @@ orjson==3.11.7
 overrides==7.7.0
 packaging==26.0
 passlib==1.7.4
+PyPDF2==3.0.1
 posthog==5.4.0
 propcache==0.4.1
 protobuf==6.33.5
