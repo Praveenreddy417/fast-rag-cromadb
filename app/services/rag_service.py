@@ -1,41 +1,41 @@
-# import openai
-# from app.core.config import settings
-# from app.services.vector_store import query_documents
-# openai.api_key = settings.OPENAI_API_KEY
-# # client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-# def generate_answer(question: str):
-#     docs = query_documents(question)
-#     context = "\n".join(docs)
-
-#     prompt = f"""
-#     Answer only from the context below:
-
-#     {context}
-
-#     Question: {question}
-#     """
-
-#     response = openai.ChatCompletion.create(
-#         model="gpt-3.5-turbo",
-#         messages=[{"role": "user", "content": prompt}]
-#     )
-
-#     return response["choices"][0]["message"]["content"]
-
 from openai import OpenAI
-import os
+from app.services.vector_store import get_retriever
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI()
 
 def generate_answer(question: str) -> str:
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": question}
-        ],
-        temperature=0.7,
+    retriever = get_retriever()
+
+    results = retriever.query(
+        query_texts=[question],
+        n_results=3
     )
 
+    documents = results.get("documents", [[]])[0]
+
+    if not documents:
+        return "The information is not available in the provided documents."
+
+    context = "\n\n".join(documents)
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": """You are a strict document-based assistant.
+Answer ONLY from the context.
+If answer not in context, say:
+'The information is not available in the provided documents.'
+"""
+            },
+            {
+                "role": "user",
+                "content": f"Context:\n{context}\n\nQuestion:\n{question}"
+            }
+        ]
+    )
+
+    print("Documents retrieved:", response.choices[0].message.content)  # DEBUG
     return response.choices[0].message.content

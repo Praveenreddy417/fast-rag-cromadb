@@ -1,29 +1,28 @@
+import os
 import chromadb
+from chromadb.config import Settings
 from chromadb.utils import embedding_functions
-from app.core.config import settings
+from ingest import CHROMA_PATH
 
-client = chromadb.PersistentClient(path="app/db/chroma_db")
-
-embedding_function = embedding_functions.OpenAIEmbeddingFunction(
-    api_key=settings.OPENAI_API_KEY,
-    model_name="text-embedding-3-small"
-)
-
-collection = client.get_or_create_collection(
-    name="pdf_docs",
-    embedding_function=embedding_function
-)
-
-def add_documents(chunks):
-    for i, chunk in enumerate(chunks):
-        collection.add(
-            documents=[chunk],
-            ids=[str(i)]
-        )
-
-def query_documents(query):
-    results = collection.query(
-        query_texts=[query],
-        n_results=3
+def get_retriever():
+    CHROMA_PATH = "app/db/chroma_db"
+    openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model_name="text-embedding-3-small"
     )
-    return results["documents"][0]
+
+    client = chromadb.PersistentClient(
+    path=CHROMA_PATH
+   )
+
+    collection = client.get_collection(
+        name="my_collection",
+        embedding_function=openai_ef
+    )
+
+    print("Collection count:", collection.count())  # DEBUG
+
+    return collection
+
+
+
