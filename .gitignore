@@ -3,4 +3,3 @@ __pycache__/
 *.pyc
 .env
 chromadb/
-app/db/chroma_db/
